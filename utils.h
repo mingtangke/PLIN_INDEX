@@ -6,10 +6,13 @@
 #pragma once
 
 #include "parameters.h"
+#include <chrono>
+#include <ctime>
 
 #define CAS(_p, _u, _v) (__atomic_compare_exchange_n(_p, _u, _v, false, __ATOMIC_ACQUIRE, __ATOMIC_ACQUIRE))
 #define ADD(_p, _v) (__atomic_add_fetch(_p, _v, __ATOMIC_ACQUIRE))
 #define SUB(_p, _v) (__atomic_sub_fetch(_p, _v, __ATOMIC_ACQUIRE))
+
 
 
 struct InnerSlot {
@@ -107,3 +110,20 @@ static void model_correction(double& slope, float& intercept, uint64_t size, _ke
     }
 }
 
+
+struct CSVRecord {
+    long long timestamp;
+    int device_id;
+    int target_pos;
+    std::string operation;
+    int logic_id;
+    double target_key;
+    uint64_t payload;
+};
+
+
+long long get_current_timestamp_milliseconds() {
+    auto now = std::chrono::system_clock::now();
+    auto duration = now.time_since_epoch();
+    return std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
+}

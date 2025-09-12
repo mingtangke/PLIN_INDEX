@@ -1,9 +1,8 @@
+#pragma once
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <sstream>
-
-
 
 void serialize_vector(const std::vector<t_record>& table, std::ostream& os) {
     size_t size = table.size();

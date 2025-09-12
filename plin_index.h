@@ -241,7 +241,7 @@ public:
     // uint32_t split_times = 0;
     uint32_t rebuild_times = 0;
     central_model meta_table;
-    DatabaseLogger db_logger{"key_log.csv","127.0.0.1",60001};
+    DatabaseLogger db_logger{"//home//ming//桌面//PLIN-N //PLIN-N//code_demo//workload_logs//workload_log.csv","127.0.0.1",60001};
 
     PlinIndex(std::string address,std::string id = "plin", bool recovery = false) : meta_table() {
         plin_ = (plin_metadata*)malloc(sizeof(plin_metadata));

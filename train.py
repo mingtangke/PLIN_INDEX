@@ -747,7 +747,7 @@ def main():
         # prediction_win=300
         window_size=500,
         sequence_length=3000,
-        top_k_hot_keys=100000,
+        top_k_hot_keys=100000, 
         prediction_win=3000
     )
     

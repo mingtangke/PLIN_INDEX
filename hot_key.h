@@ -23,8 +23,11 @@ public:
     void start();
     void try_start();
     void stop();
-    void log_query( _key_t & key,_payload_t & payload);
+    void log_query(CSVRecord &log_record);
+
     bool prehot_cache = false;
+    bool plin_server_block = false; //currently block during prediction
+    
     std::unordered_map<_key_t,_payload_t> hot_map_;
     std::unordered_map<_key_t,_payload_t> log_map_;
 
@@ -44,13 +47,13 @@ private:
     
     
     std::mutex log_mutex_;
-    std::queue<_key_t> log_queue_;
+    std::queue<CSVRecord> log_queue_;
     // std::unordered_map<_key_t,_payload_t> log_map_;
     std::mutex hot_map_mutex_;
     
     size_t HOT_CACHE = 3000000;
     size_t MAX_BUFFER_SIZE = 1000000;
-    size_t MAX_QUEUE_SIZE = 50000;
+    size_t MAX_QUEUE_BUFFER_SIZE = 50000;
     std::ofstream log_file_;
 
     int sockfd_{-1};
@@ -67,6 +70,7 @@ DatabaseLogger::DatabaseLogger(const std::string& log_file, const std::string& p
         if (!log_file_.is_open()) {
         throw std::runtime_error("Failed to open log file");
         }
+        log_file_<< "timestamp,device_id,key,operation\n";
 }
 
 DatabaseLogger::~DatabaseLogger() {
@@ -80,39 +84,26 @@ DatabaseLogger::~DatabaseLogger() {
 }
 
 
-void DatabaseLogger::log_query( _key_t & key,_payload_t & payload){
+void DatabaseLogger::log_query( CSVRecord &log_record){
     std::lock_guard<std::mutex> lock(log_mutex_);
-    log_queue_.push(key);
+    _key_t key = log_record.target_key;
+    _payload_t payload = log_record.payload;
+    log_queue_.push(log_record);
     log_map_[key] = payload;
 
-    if(log_queue_.size() > MAX_QUEUE_SIZE){
+    if(log_queue_.size() > MAX_QUEUE_BUFFER_SIZE){
         while( !log_queue_.empty()){
-            log_file_ << std::fixed << log_queue_.front() << "\n";
+            log_file_ << log_record.timestamp << ","
+             << log_record.device_id << ","
+             << std::fixed <<log_record.target_key << ","
+             << log_record.operation << "\n";
             log_queue_.pop();
         }
         log_file_.flush();
-        end_index = end_index + MAX_QUEUE_SIZE - 1;
+        end_index = end_index + MAX_QUEUE_BUFFER_SIZE - 1;
         std::cout<<"end_index: "<<end_index<<std::endl;
     }
 }
-
-// void DatabaseLogger::start(){
-//     std::ifstream infile("hot_keys.csv");
-//     if(infile.is_open()){
-//         std::string line;
-//         while (std::getline(infile, line)) {
-//             size_t space_pos = line.find(' ');
-//             if (space_pos != std::string::npos) {
-//                 _key_t key = std::stod(line.substr(0, space_pos));
-//                 _payload_t payload = std::stoi(line.substr(space_pos + 1));
-//                 hot_map_[key] = payload;
-//             }
-//         }
-//         infile.close();
-//         prehot_cache = true;
-//         std::cout<<"Load hot key finished! hot key size: "<<hot_map_.size()<<std::endl;
-//     }
-// }
 
 
 void DatabaseLogger::start() {
@@ -165,6 +156,7 @@ void DatabaseLogger::communication_thread() {
     while (running_) {
         if (start_index == 0 && end_index >= HOT_CACHE && retrain) {
             retrain = false;
+            plin_server_block = true;
             std::string message = "INDEX:" + std::to_string(start_index) + ":" + std::to_string(end_index);
             std::cout << "Send to python: " << message << std::endl;
             ssize_t sent_bytes = send(sockfd_, message.c_str(), message.length(), 0);
@@ -226,8 +218,11 @@ void DatabaseLogger::communication_thread() {
 
             hotkey_file << std::fixed << key <<" "<<payload<<"\n";
             hotkey_file.close();
+
+            plin_server_block = false ; //main block recovery
             prehot_cache = true;
             transfer_complete = false;
+
             hot_message = "";
         }
     }
