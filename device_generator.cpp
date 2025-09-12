@@ -131,7 +131,7 @@ public:
         rng.seed(std::random_device{}());
     }
     
-    std::vector<CSVRecord> generate_workload(int requests_per_device = 100000) {
+    std::vector<CSVRecord> generate_workload(int requests_per_device = 500000) {
         std::vector<CSVRecord> logs;
         
         // 计算总请求数
@@ -219,15 +219,15 @@ int main() {
     // 初始化生成器
     WorkloadGenerator generator(
         20,        // num_devices
-        10000000,   // total_keys one device:500000 device :hot key = 500000*0.2 = 100000
-        1.2,       // zipf_param
+        10000000,   // total_keys one device:500000 device :hot key = 100000
+        1.2,       // zipf_param   3000000*30
         30,        // cycle_duration
         10,         // total_cycles
-        "./workload_logs"  // output_dir
+        "./data"  // output_dir
     );
     
-    // 生成工作负载
-    auto workload = generator.generate_workload(500000);
+    // 300000 * 20 *5 = 
+    auto workload = generator.generate_workload(300000);
     
     // 保存工作负载
     std::string log_file = generator.save_workload(workload, "workload_log.csv");

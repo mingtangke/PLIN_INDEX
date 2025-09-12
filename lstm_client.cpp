@@ -46,7 +46,7 @@ public:
         double error_rate = 0.0;
         size_t global_error = 0;
 
-        std::getline(infile, command) //除去csv的表头一行
+        std::getline(infile, command); //除去csv的表头一行
         while (std::getline(infile, command)) {
             round++;
             if (!command.empty()) {
@@ -59,22 +59,22 @@ public:
                 std::string token;
 
                 std::getline(ss, token, ',');
-                std::string timestamp = std::stod(token);
+                // std::string timestamp = std::stod(token);
     
                 std::getline(ss, token, ',');
-                std::string device_id = token;
+                int device_id = std::stoi(token);
             
                 std::getline(ss, token, ',');
-                std::string target_pos = token;
+                int target_pos = std::stoi(token);
 
                 std::getline(ss, token, ',');
                 std::string operation = token;
 
                 //溢出树这部分由于时间问题我们暂时先不给予考虑
-                key_t target_key = keys[target_pos];
+                _key_t target_key = keys[target_pos];
                 if (target_key >= client_table.min_key && target_key <= client_table.max_key) {
                     int logic_id = client_table.predict_pos(target_key);
-                    command = "findid " + device_id + " " + target_pos + " " + std::to_string(logic_id);
+                    command = "findid " + std::to_string(device_id) + " " + std::to_string(target_pos) + " " + std::to_string(logic_id);
                     find_time++;
                 }
              
