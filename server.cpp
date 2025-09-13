@@ -818,13 +818,12 @@ void* handle_client(void *client_socket) {
         std::string command(buffer);
         index++;
         if(index % 100000 == 0) std::cout<<index<<std::endl;
-        if((cache_hit_count + cache_miss_count) % 100000 == 0 &&  (cache_hit_count + cache_miss_count) != 0) 
-            std::cout<<"cache_hit_rate"<< cache_hit_count/(cache_hit_count + cache_miss_count)<<std::endl;
-
-        bool prehot_cache = test_index.db_logger.prehot_cache;
-        std::unordered_map<_key_t,_payload_t> hot_map_ = test_index.db_logger.hot_map_;
-        //for debug
-        //  std::unordered_map<_key_t,_payload_t> hot_map_ = test_index.db_logger.log_map_;
+        if((cache_hit_count + cache_miss_count) % 1000 == 0 &&  (cache_hit_count + cache_miss_count) != 0) {
+            double cache_hit_rate = 1.0 *cache_hit_count/(cache_hit_count + cache_miss_count);
+            std::cout<<"cache_hit_rate"<< cache_hit_rate<<std::endl;
+        }
+            // std::cout<<"cache_hit_rate"<< cache_hit_count/(cache_hit_count + cache_miss_count)<<std::endl;
+            //  I am stupid 
 
         if (command == "bye" || command == "bye;") {
             std::string message = std::to_string(pthread_self())+"Goodbye!\n";
@@ -853,10 +852,12 @@ void* handle_client(void *client_socket) {
             _payload_t answer;
             std::string response;
            
-            if(prehot_cache){
-    
-                if(hot_map_.find(target_key) != hot_map_.end() &&
-                    hot_map_[target_key] == payloads[log_record.target_pos]){
+            if(test_index.db_logger.prehot_cache){
+                // std::unordered_map<_key_t,_payload_t> hot_map_ = test_index.db_logger.hot_map_;
+                std::map<_key_t,_payload_t> hot_map_ = test_index.db_logger.hot_map_;
+                // if(hot_map_.find(target_key) != hot_map_.end() &&
+                //     hot_map_[target_key] == payloads[log_record.target_pos]){
+                if( hot_map_[target_key] == payloads[log_record.target_pos]){
                     cache_hit_count ++;
                     response = "Success!";
                 }else{

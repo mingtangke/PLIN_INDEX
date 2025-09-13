@@ -226,8 +226,8 @@ int main() {
         "./data"  // output_dir
     );
     
-    // 300000 * 20 *5 = 
-    auto workload = generator.generate_workload(300000);
+    // 300000 * 20 *2 = 40 * 300000 = 12000000   precache
+    auto workload = generator.generate_workload(300000); 
     
     // 保存工作负载
     std::string log_file = generator.save_workload(workload, "workload_log.csv");

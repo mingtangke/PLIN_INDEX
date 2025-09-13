@@ -407,7 +407,6 @@ class HotKeyPredictor:
                     batch_metrics = metrics_calculator(outputs, batch_y)
                     for key, value in batch_metrics.items():
                         val_metrics[key] += value
-            
             avg_val_loss = val_loss / val_batches if val_batches > 0 else float('inf')
             
             # Average metrics

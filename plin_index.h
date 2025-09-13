@@ -273,6 +273,7 @@ public:
     void bulk_load(_key_t* keys, _payload_t* payloads, uint64_t number) {
         // Make segmentation for leaves
         std::vector<Segment> segments;
+        db_logger.keys = keys;
         auto in_fun = [keys](auto i) {
             return std::pair<_key_t, size_t>(keys[i],i);
         };

@@ -14,8 +14,10 @@
 #include "parameters.h"
 #include <unordered_map>
 #include <map>
+#include "utils.h"
 
 class DatabaseLogger {
+
 public:
     DatabaseLogger(const std::string& log_file, const std::string& python_host, int python_port);
     ~DatabaseLogger();
@@ -28,8 +30,10 @@ public:
     bool prehot_cache = false;
     bool plin_server_block = false; //currently block during prediction
     
-    std::unordered_map<_key_t,_payload_t> hot_map_;
+    // std::unordered_map<_key_t,_payload_t> hot_map_;
+    std::map<_key_t,_payload_t>hot_map_;
     std::unordered_map<_key_t,_payload_t> log_map_;
+    _key_t *keys;
 
 private:
     
@@ -51,9 +55,11 @@ private:
     // std::unordered_map<_key_t,_payload_t> log_map_;
     std::mutex hot_map_mutex_;
     
-    size_t HOT_CACHE = 3000000;
+    // size_t HOT_CACHE = 3000000;
+    size_t HOT_CACHE = 15000000;  //具体计算过程在device_generator.cpp中
     size_t MAX_BUFFER_SIZE = 1000000;
     size_t MAX_QUEUE_BUFFER_SIZE = 50000;
+    size_t HOT_KEY_NUM = 50000;
     std::ofstream log_file_;
 
     int sockfd_{-1};
@@ -91,12 +97,13 @@ void DatabaseLogger::log_query( CSVRecord &log_record){
     log_queue_.push(log_record);
     log_map_[key] = payload;
 
-    if(log_queue_.size() > MAX_QUEUE_BUFFER_SIZE){
+    if(log_queue_.size() > MAX_QUEUE_BUFFER_SIZE){    //a big bug for me
         while( !log_queue_.empty()){
-            log_file_ << log_record.timestamp << ","
-             << log_record.device_id << ","
-             << std::fixed <<log_record.target_key << ","
-             << log_record.operation << "\n";
+            log_file_ << log_queue_.front().timestamp << ","
+             << log_queue_.front().device_id << ","
+             << std::fixed <<log_queue_.front().target_key << ","
+             << log_queue_.front().operation << "\n";
+
             log_queue_.pop();
         }
         log_file_.flush();
@@ -141,7 +148,7 @@ void DatabaseLogger::stop() {
 void DatabaseLogger::communication_thread() {
 
     std::vector<char> buffer(MAX_BUFFER_SIZE, 0);
-    std::ofstream hotkey_file("hot_keys.csv", std::ios::app);
+    std::ofstream hotkey_file("//home//ming//桌面//PLIN-N //PLIN-N//data//hot_key.csv", std::ios::app);
     hotkey_file << 'hot_key_count' << transform_count << "\n";
     transform_count++;
     std::cout << "Communication thread started" << std::endl;
@@ -184,7 +191,7 @@ void DatabaseLogger::communication_thread() {
                 buffer[valread] = '\0';
                 std::string message(buffer.data());
                 if (!transfer_complete) {
-                    hot_message += message;
+                    hot_message += message;  
                 }
                 if (message.find("END") != std::string::npos) {
                     transfer_complete = true;
@@ -201,18 +208,19 @@ void DatabaseLogger::communication_thread() {
         if(hot_message.find("END") != std::string::npos && hot_message.find("HOT_KEYS:") == 0 ){
             std::lock_guard<std::mutex> lock(hot_map_mutex_);
             hot_map_.clear();
+            // hot_map_.reserve(HOT_KEY_NUM); //提高性能
             std::string keys_str = hot_message.substr(9, hot_message.length() - 12);
             size_t pos = 0;
 
             while ((pos = keys_str.find(",")) != std::string::npos) {
-                _key_t key = std::stod(keys_str.substr(0, pos));
+                _key_t key =  keys[std::stoi(keys_str.substr(0, pos))];
                 _payload_t payload = log_map_[key]; 
                 keys_str.erase(0, pos + 1);
                 hot_map_[key] = payload;
                 hotkey_file << std::fixed << key << " "<<payload<<"\n";
             }
 
-            _key_t key = std::stod(keys_str);
+            _key_t key = keys[std::stoi(keys_str)];
             _payload_t payload = log_map_[key];
              hot_map_[key] = payload;
 

@@ -1,5 +1,6 @@
 {
     "files.associations": {
+        "*.ipynb": "python",
         "thread": "cpp",
         "array": "cpp",
         "atomic": "cpp",
@@ -73,7 +74,8 @@
         "codecvt": "cpp",
         "__nullptr": "cpp",
         "regex": "cpp",
-        "shared_mutex": "cpp"
+        "shared_mutex": "cpp",
+        "__node_handle": "cpp"
     },
 
 }

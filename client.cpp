@@ -369,7 +369,7 @@ public:
                 std::string token;
 
                 std::getline(ss, token, ',');
-                // std::string timestamp = std::stod(token);
+                std::string timestamp = token;
     
                 std::getline(ss, token, ',');
                 int device_id = std::stoi(token);
@@ -381,6 +381,7 @@ public:
                 std::string operation = token;
 
                 //溢出树这部分由于时间问题我们暂时先不给予考虑
+                if(round % 100 == 0) std::cout<<"target_pos"<<target_pos<<std::endl;
                 _key_t target_key = keys[target_pos];
                 if (target_key >= client_table.min_key && target_key <= client_table.max_key) {
                     int logic_id = client_table.predict_pos(target_key);
